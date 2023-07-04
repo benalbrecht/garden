@@ -102,6 +102,7 @@
   (or (util/rule? x)
       (util/at-import? x)
       (util/at-media? x)
+      (util/at-container? x)
       (util/at-supports? x)
       (util/at-keyframes? x)))
 
@@ -295,7 +296,7 @@
              (doall (mapcat expand (expand rules))))
         ;; Though container-queries may be nested, they may not be nested
         ;; at compile time. Here we make sure this is the case.
-        [subqueries rules] (divide-vec util/at-media? xs)]
+        [subqueries rules] (divide-vec util/at-container? xs)]
     (cons
      (CSSAtRule. :container {:container-queries container-queries
                              :rules rules})
@@ -676,6 +677,18 @@
     (when (seq rules)
       (str "@supports "
            (render-feature-expr feature-queries)
+           l-brace-1
+           (-> (map render-css rules)
+               (rule-join)
+               (indent-str))
+           r-brace-1))))
+
+(defmethod render-at-rule :container
+  [{:keys [value]}]
+  (let [{:keys [container-queries rules]} value]
+    (when (seq rules)
+      (str "@container "
+           (render-media-expr container-queries)
            l-brace-1
            (-> (map render-css rules)
                (rule-join)
